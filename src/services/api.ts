@@ -2,7 +2,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:4000",
+  baseURL: "https://tesla-backend-2da8.onrender.com",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
