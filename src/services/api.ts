@@ -80,26 +80,23 @@ API.interceptors.response.use(
       _skipAuthRefresh?: boolean;
     };
 
-    // Skip if this is a refresh token request or already retried
+    // Skip refresh for login endpoints completely
+    if (
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/admin/login")
+    ) {
+      return Promise.reject(error);
+    }
+
+    // Skip if already retried or flagged to skip
     if (originalRequest._skipAuthRefresh || originalRequest._retry) {
       return Promise.reject(error);
     }
 
     const isAdmin = isAdminRequest(originalRequest.url);
 
-    // If error is 401 (Unauthorized)
     if (error.response?.status === 401 && originalRequest) {
-      // Skip refresh for auth endpoints (except login)
-      if (
-        originalRequest.url?.includes("/auth/") &&
-        !originalRequest.url?.includes("/auth/login") &&
-        !originalRequest.url?.includes("/admin/login")
-      ) {
-        return Promise.reject(error);
-      }
-
       if (isRefreshing) {
-        // If we're already refreshing, add this request to the queue
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject, config: originalRequest });
         });
@@ -109,45 +106,29 @@ API.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Try to refresh token
         let token: string;
 
         if (isAdmin) {
-          // Use admin refresh token
           const { adminService } = await import("./admin.service");
           const refreshResponse = await adminService.refreshToken();
           token = refreshResponse.token;
         } else {
-          // Use regular user refresh token
           const { authService } = await import("./auth.service");
           const refreshResponse = await authService.refreshToken();
           token = refreshResponse.token;
         }
 
-        // Update the original request's header
         originalRequest.headers.Authorization = `Bearer ${token}`;
-
-        // Update token in localStorage
         setToken(isAdmin, token);
-
-        // Process all queued requests
         processQueue(null, token);
-
-        // Retry the original request
         return API(originalRequest);
       } catch (refreshError) {
-        console.error("Token refresh failed in interceptor:", refreshError);
-
-        // Process all queued requests with error
         processQueue(error, null);
 
-        // Clear appropriate auth data
         if (isAdmin) {
           localStorage.removeItem("adminToken");
           localStorage.removeItem("adminRefreshToken");
           localStorage.removeItem("adminUser");
-
-          // Redirect to admin login page if not already there
           if (!window.location.pathname.includes("/admin/login")) {
             window.location.href = "/admin/login";
           }
@@ -155,8 +136,6 @@ API.interceptors.response.use(
           localStorage.removeItem("token");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
-
-          // Redirect to regular login page if not already there
           if (window.location.pathname !== "/login") {
             window.location.href = "/login";
           }
@@ -168,9 +147,9 @@ API.interceptors.response.use(
       }
     }
 
-    // For other errors, just reject
     return Promise.reject(error);
   }
 );
+
 
 export default API;
