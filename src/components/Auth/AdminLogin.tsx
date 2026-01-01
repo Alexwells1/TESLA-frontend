@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Loader2, Shield } from "lucide-react";
 import { useAdminAuth } from "@/hooks/dashboard/useAdminAuth";
+import Logo from "../logo/logo";
 
 export default function SimpleAdminLogin() {
   const [formData, setFormData] = useState({
@@ -40,7 +41,7 @@ export default function SimpleAdminLogin() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="inline-flex items-center justify-center p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-red-500/20 border border-amber-500/30 mb-4">
-            <Shield className="h-8 w-8 text-amber-500" />
+           <Logo size="lg" />
           </div>
           <h2 className="text-2xl font-bold">Admin Dashboard</h2>
           <p className="text-gray-400 mt-2">Sign in to your admin account</p>
